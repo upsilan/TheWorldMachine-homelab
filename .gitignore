@@ -1,0 +1,28 @@
+# Secrets
+.env
+.env.*
+# Allow the example :3
+!.env.example
+
+## Docker shit
+**/config/
+**/data/
+**/state/
+**/cache
+**/media/
+**/etc-pihole/
+**/etc-dnsmasq.d/
+
+# Logs
+*.log
+
+# Backups
+*.bak
+*.backup
+*.old
+
+# Misc
+ollama/
+paperless/redis/redisdata/
+servarr/
+!homepage/config/

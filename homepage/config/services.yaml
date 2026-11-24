@@ -1,0 +1,95 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/services/
+
+- Media:
+    - jellyfin:
+        icon: jellyfin
+        href: https://jellyfin.upsilan.duckdns.org
+        description: Media streaming server
+        widget:
+          type: jellyfin
+          url: https://jellyfin.upsilan.duckdns.org
+          version: 1 #1 if 10.12 or lower 2 if 10.12 or higher
+
+    - radarr:
+        icon: radarr
+        href: https://radarr.upsilan.duckdns.org
+        description: Movies management tool
+        widget:
+          type: radarr
+          url: https://radarr.upsilan.duckdns.org
+
+    - sonarr:
+        icon: sonarr
+        href: https://sonarr.upsilan.duckdns.org
+        description: Shows management tool
+        widget:
+          type: sonarr
+          url: https://sonarr.upsilan.duckdns.org
+
+    - prowlarr:
+        icon: prowlarr
+        href: https://prowlarr.upsilan.duckdns.org
+        description: Indexer manager for torrents
+        widget:
+          type: prowlarr
+          url: https://prowlarr.upsilan.duckdns.org
+
+    - qbittorrent:
+        icon: qbittorrent
+        href: https://qbittorrent.upsilan.duckdns.org
+        description: Torrent client
+        widget:
+          type: qbittorrent
+          url: https://qbittorrent.upsilan.duckdns.org
+
+    - flaresolverr:
+        icon: flaresolverr
+        href: https://flaresolverr.upsilan.duckdns.org
+        description: Proxy for bypassing web protections
+
+- Network:
+    - Pi-hole:
+        icon: pi-hole.png
+        href: https://pihole.upsilan.duckdns.org/admin
+        description: Network level ad-blocking DNS server
+        widget:
+          type: pihole
+          url: https://pihole.upsilan.duckdns.org
+          version: 6
+
+    - Tailscale:
+        icon: tailscale
+        href: https://login.tailscale.com/admin/machines
+        description: Private VPN network
+        widget:
+          type: tailscale
+
+- Security:
+    - Vaultwarden:
+        icon: vaultwarden
+        href: https://vaultwarden.upsilan.duckdns.org
+        description: Self hosted password manager
+
+- Misc:
+    - Homepage:
+        icon: homepage
+        href: https://homepage.upsilan.duckdns.org
+        description: Custom dashboard for the server
+
+    - Home Assistant:
+        icon: home-assistant
+        href: https://homeassistant.upsilan.duckdns.org
+        description: Central hub for smart home automation and device management.
+
+    - Paperless:
+        icon: paperless-ngx
+        href: https://paperless.upsilan.duckdns.org
+        description: self-hosted document management system for digitizing, organizing, and searching documents.
+
+    - TODO:
+        - caddy:
+            #webui
+        - nas:
+            #smth

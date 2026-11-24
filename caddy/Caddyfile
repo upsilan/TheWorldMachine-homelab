@@ -1,0 +1,60 @@
+jellyfin.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8096
+}
+pihole.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8081
+}
+radarr.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:7878
+}
+sonarr.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8989
+}
+http://flaresolverr.upsilan.duckdns.org {
+	reverse_proxy 10.0.0.69:8191
+}
+http://prowlarr.upsilan.duckdns.org {
+	reverse_proxy 10.0.0.69:9696
+}
+qbittorrent.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8080
+}
+vaultwarden.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8082
+}
+homeassistant.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8123
+}
+homepage.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:3000
+}
+paperless.upsilan.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy 10.0.0.69:8000
+}

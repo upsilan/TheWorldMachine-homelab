@@ -1,0 +1,314 @@
+x-common-keys: &common-keys
+    restart: unless-stopped
+    logging:
+      driver: json-file
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Asia/Jerusalem
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+
+services:
+
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ./tailscale/state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - sys_module
+
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    restart: unless-stopped
+    network_mode: host
+    user: root
+    environment:
+      TZ: "Asia/Jerusalem"
+      DNSMASQ_LISTENING: "all"
+      WEB_PORT: "8081"
+    volumes:
+      - ./pihole/etc-pihole:/etc/pihole
+      - ./pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+    cap_add:
+      - net_admin
+      - sys_time
+
+############################################
+##             the arr server             ##
+############################################
+  jellyfin:
+    <<: *common-keys
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - ./servarr/media:/media
+    ports:
+      - 8096:8096
+
+  qbittorrent:
+    <<: *common-keys
+    image: ghcr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    environment:
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - ./qbittorrent/config:/config
+      - ./servarr:/data
+
+  radarr:
+    <<: *common-keys
+    image: ghcr.io/linuxserver/radarr:latest
+    container_name: radarr
+    ports:
+      - 7878:7878
+    volumes:
+      - ./radarr/config:/config
+      - ./servarr:/data
+
+  sonarr:
+    <<: *common-keys
+    image: ghcr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    ports:
+      - 8989:8989
+    volumes:
+      - ./sonarr/config:/config
+      - ./servarr:/data
+
+  prowlarr:
+    <<: *common-keys
+    image: ghcr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    ports:
+      - 9696:9696
+    volumes:
+      - ./prowlarr/config:/config
+
+  flaresolverr:
+    <<: *common-keys
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    ports:
+      - 8191:8191
+    volumes:
+      - ./flaresolver/config:/config
+
+########################################
+##              arr end               ##
+########################################
+
+  caddy:
+    image: ghcr.io/serfriz/caddy-duckdns:latest
+    container_name: caddy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    environment:
+      - DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    restart: unless-stopped
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    volumes:
+      - ./vaultwarden/data:/data
+    ports:
+      - 8082:80
+    environment:
+      - LOGIN_RATELIMIT_MAX_BURST=10
+      - LOGIN_RATELIMIT_SECONDS=60
+      - ADMIN_RATELIMIT_MAX_BURST=10
+      - ADMIN_RATELIMIT_SECONDS=60
+      - WEB_VAULT_ENABLED=true
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+    restart: unless-stopped
+
+
+########################################
+##           paperless-ngx            ##
+########################################
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    depends_on:
+      #- db
+      - broker
+      - gotenberg
+      - tika
+    ports:
+      - 8000:8000
+    volumes:
+      - ./paperless/paperless/data:/usr/src/paperless/data
+      - ./paperless/paperless/media:/usr/src/paperless/media
+      - ./paperless/paperless/exports:/usr/src/paperless/export
+      - ./paperless/paperless/consume:/usr/src/paperless/consume
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBENGINE: sqlite
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY}
+      PAPERLESS_TIME_ZONE: Asia/Jerusalem
+      PAPERLESS_OCR_LANGUAGES: heb
+      PAPERLESS_OCR_LANGUAGE: eng+heb
+      PAPERLESS_URL: https://paperless.upsilan.duckdns.org
+      PAPERLESS_USE_X_FORWARD_HOST: true
+      PAPERLESS_PROXY_SSL_HEADER: '["HTTP_X_FORWARDED_PROTO", "https"]'
+      PAPERLESS_TIKA_ENABLED: "1"
+      PAPERLESS_TIKA_ENDPOINT: "http://tika:9998"
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: "http://gotenberg:3000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    restart: unless-stopped
+
+  broker:
+    image: docker.io/valkey/valkey:9-alpine
+    container_name: broker
+    volumes:
+      - ./paperless/redis/redisdata:/data
+    restart: unless-stopped
+
+  gotenberg:
+    image: docker.io/gotenberg/gotenberg:8.38
+    container_name: gotenberg
+    restart: unless-stopped
+    #command:
+    # - "gotenberg"
+    # - " \--chromium-disable-javascript=true"
+    # - "--chromium-allow-list=file:///tmp/.*"
+
+  tika:
+    image: docker.io/apache/tika:3.3.1.0
+    container_name: tika
+    restart: unless-stopped
+
+########################################
+##           paperless-end            ##
+########################################
+
+
+
+
+########################################
+##           homeassistant            ##
+########################################
+
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ./homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbuys:/run/dbus:ro
+    restart: unless-stopped
+      #privileged: true
+    network_mode: host
+    environment:
+      TZ: Asia/Jerusalem
+
+  piper:
+    image: lscr.io/linuxserver/piper:latest
+    container_name: piper
+
+    ports:
+      - 10200:10200
+    volumes:
+      - .homeassistant/piper/config:/config
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Jerusalem
+      - PIPER_VOICE=he_IL-saspeech-medium
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+  faster-whisper:
+    image: lscr.io/linuxserver/faster-whisper:latest
+    container_name: faster-whisper
+
+    ports:
+      - 10300:10300
+    volumes:
+      - .homeassistant/fasterwhisper/config:/config
+#    security_opt:
+#      - seccomp: unconfined
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Jerusalem
+      - WHISPER_MODEL=small
+      - WHISPER_LANG=he
+    gpus: all
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    volumes:
+      - ./ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    gpus: all
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+########################################
+##         homeassistant end          ##
+########################################
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - 3000:3000
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+    volumes:
+      - ./homepage/config:/app/config
+      - ./homepage/Background:/app/public/images
+      # - ./homepage/icons:/app/public/icons
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare
+    command: tunnel --no-autoupdate --url ${CLOUDFLARE_TUNNEL_URL}
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    restart: unless-stopped
